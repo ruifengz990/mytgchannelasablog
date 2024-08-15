@@ -9,41 +9,77 @@ const posts = channel.posts ?? []
 
 const beforeCursor = posts[posts.length - 1]?.id
 const afterCursor = posts[0]?.id
-// const cursor = +Astro.params.cursor
 ---
 
 <Layout channel={channel} id="main-container">
   <slot name="header">
     <Header channel={channel} />
   </slot>
-  <div class="items">
+  <div class="items" id="items-container">
     {posts.map((post) => <Item post={post} />)}
   </div>
 
   <div class="pages-container">
-    {
-      before && beforeCursor > 1 ? (
-        <a
-          href={`${SITE_URL}before/${beforeCursor}`}
-          title="Before"
-          class="page"
-        >
-          Before
-        </a>
-      ) : (
-        <span class="page-placeholder">&nbsp;</span>
-      )
-    }
+    {before && beforeCursor > 1 ? (
+      <a
+        href={`${SITE_URL}before/${beforeCursor}`}
+        title="Before"
+        class="page"
+        id="load-before"
+        data-url={`${SITE_URL}before/${beforeCursor}`}
+      >
+        Before
+      </a>
+    ) : (
+      <span class="page-placeholder">&nbsp;</span>
+    )}
 
     <div class="pages-info"></div>
-    {
-      after && afterCursor ? (
-        <a href={`${SITE_URL}after/${afterCursor}`} title="After" class="page">
-          After
-        </a>
-      ) : (
-        <span class="page-placeholder">&nbsp;</span>
-      )
-    }
+
+    {after && afterCursor ? (
+      <a 
+        href={`${SITE_URL}after/${afterCursor}`} 
+        title="After" 
+        class="page"
+        id="load-after"
+        data-url={`${SITE_URL}after/${afterCursor}`}
+      >
+        After
+      </a>
+    ) : (
+      <span class="page-placeholder">&nbsp;</span>
+    )}
   </div>
 </Layout>
+
+<script>
+  document.getElementById('load-before')?.addEventListener('click', async function (event) {
+    event.preventDefault();
+    const url = this.getAttribute('data-url');
+    const response = await fetch(url);
+    const text = await response.text();
+
+    // Parse the response to extract the new posts
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(text, 'text/html');
+    const newItems = doc.querySelector('#items-container').innerHTML;
+
+    // Append the new items to the existing list
+    document.getElementById('items-container').innerHTML = document.getElementById('items-container').innerHTML + newItems;
+  });
+
+  document.getElementById('load-after')?.addEventListener('click', async function (event) {
+    event.preventDefault();
+    const url = this.getAttribute('data-url');
+    const response = await fetch(url);
+    const text = await response.text();
+
+    // Parse the response to extract the new posts
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(text, 'text/html');
+    const newItems = doc.querySelector('#items-container').innerHTML;
+
+    // Append the new items to the existing list
+    document.getElementById('items-container').innerHTML += newItems;
+  });
+</script>
